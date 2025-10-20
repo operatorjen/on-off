@@ -1,0 +1,27 @@
+{
+  "name": "on-off",
+  "version": "1.0.0",
+  "description": "Signaling games",
+  "homepage": "https://github.com/operatorjen/on-off#readme",
+  "bugs": {
+    "url": "https://github.com/operatorjen/on-off/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/operatorjen/on-off.git"
+  },
+  "license": "AGPL-3.0-or-later",
+  "author": "operatorjen",
+  "type": "module",
+  "main": "index.mjs",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "start": "node index.mjs",
+    "test": "node tests/index.test.mjs"
+  },
+  "dependencies": {
+    "level": "^10.0.0"
+  }
+}
