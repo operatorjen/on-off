@@ -19,6 +19,7 @@
   },
   "scripts": {
     "start": "node index.mjs",
+    "read": "node daily.mjs ./csvs/traffic-hourly-2025-10-14_to_2025-10-20.csv --day 2025-10-20 --repo systems.as.games",
     "test": "node tests/index.test.mjs"
   },
   "dependencies": {

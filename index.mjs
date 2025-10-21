@@ -1,7 +1,7 @@
 import { Level } from 'level'
 
-const MAX_ASCII = 128
-const VERSION = 1
+const BASE36_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+const BASE = 36
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
 
 export default class OnOff {
@@ -61,26 +61,22 @@ export default class OnOff {
     return `signal:${day}:${this.namespace}:${hh}`
   }
 
-  async recordSignal(currentClones, currentViews, hour, day = this.defaultDay()) {
-    this.ensureFiniteInteger(currentClones, 'currentClones')
-    this.ensureFiniteInteger(currentViews, 'currentViews')
+  async recordSignal(views, hour, day = this.defaultDay()) {
+    this.ensureFiniteInteger(views, 'views')
     this.ensureIntInRange(hour, 'hour', 0, 23)
     this.ensureDayString(day, 'day')
 
-    const cByte = this.mod(currentClones, MAX_ASCII)
-    const vByte = this.mod(currentViews, MAX_ASCII)
+    const charIndex = this.mod(views, BASE)
+    const char = BASE36_CHARS[charIndex]
 
     const data = {
-      v: VERSION,
       ns: this.namespace,
-      type: 'ascii',
-      cloneChar: String.fromCharCode(cByte),
-      viewChar: String.fromCharCode(vByte),
+      type: 'base36',
+      char: char,
       raw: {
-        clones: cByte,
-        views: vByte
+        views: views,
+        charIndex
       },
-      checksum: (cByte ^ vByte) & 0x7f,
       timestamp: Date.now(),
       day,
       hour
@@ -90,19 +86,8 @@ export default class OnOff {
     return data
   }
 
-  async decodeSignal(currentClones, currentViews, hour, day = this.defaultDay()) {
-    return this.recordSignal(currentClones, currentViews, hour, day)
-  }
-
-  async verify(hour, day = this.defaultDay()) {
-    this.ensureIntInRange(hour, 'hour', 0, 23)
-    this.ensureDayString(day, 'day')
-    const data = await this.db.get(this.key(hour, day))
-    const { raw, checksum } = data
-    if (!raw) return false
-    const cByte = this.mod(raw.clones, MAX_ASCII)
-    const vByte = this.mod(raw.views, MAX_ASCII)
-    return ((cByte ^ vByte) & 0x7f) === checksum
+  async decodeSignal(views, hour, day = this.defaultDay()) {
+    return this.recordSignal(views, hour, day)
   }
 
   async reconstructMessage(startHour = 0, endHour = 23, day = this.defaultDay(), { trim = false } = {}) {
@@ -113,10 +98,8 @@ export default class OnOff {
     }
     this.ensureDayString(day, 'day')
 
-    const hours = []
     const keys = []
     for (let hour = startHour; hour <= endHour; hour++) {
-      hours.push(hour)
       keys.push(this.key(hour, day))
     }
 
@@ -127,7 +110,7 @@ export default class OnOff {
     let message = ''
     for (let i = 0; i < results.length; i++) {
       const signal = results[i]
-      message += signal ? (signal.cloneChar + signal.viewChar) : '  '
+      message += signal ? signal.char : ' '
     }
     return trim ? message.trim() : message
   }

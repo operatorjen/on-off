@@ -14,17 +14,18 @@ async function runTests() {
   let passed = 0
   let failed = 0
 
-  console.log('1. Testing Basic ASCII:')
+  console.log('1. Testing Basic Base36:')
   {
     const { db, location } = createTestDB()
     const protocol = new OnOff(db)
     try {
-      await protocol.decodeSignal(72, 32, 1) // 'H '
-      await protocol.decodeSignal(73, 33, 2) // 'I!'
-      await protocol.decodeSignal(33, 10, 3) // '!\n'
+      await protocol.decodeSignal(0, 1) // 'A'
+      await protocol.decodeSignal(1, 2) // 'B' 
+      await protocol.decodeSignal(2, 3) // 'C'
+      await protocol.decodeSignal(3, 4) // 'D'
       
-      const message = await protocol.reconstructMessage(1, 3)
-      const expected = 'H I!!\n'
+      const message = await protocol.reconstructMessage(1, 4)
+      const expected = 'ABCD'
       assert.strictEqual(message, expected, `Expected "${expected}", got "${message}"`)
       console.log('   ✅ PASS')
       passed++
@@ -37,20 +38,19 @@ async function runTests() {
     }
   }
 
-  console.log('\n2. Testing Full Sentence:')
+  console.log('\n2. Testing Full Message:')
   {
     const { db, location } = createTestDB()
     const protocol = new OnOff(db)
     try {
-      await protocol.decodeSignal(72, 69, 4) // 'HE'
-      await protocol.decodeSignal(76, 76, 5) // 'LL' 
-      await protocol.decodeSignal(79, 32, 6) // 'O '
-      await protocol.decodeSignal(87, 79, 7) // 'WO'
-      await protocol.decodeSignal(82, 76, 8) // 'RL'
-      await protocol.decodeSignal(68, 0, 9) // 'D\0'
+      await protocol.decodeSignal(7, 10) // 'H'
+      await protocol.decodeSignal(4, 11) // 'E'
+      await protocol.decodeSignal(11, 12) // 'L'
+      await protocol.decodeSignal(11, 13) // 'L'
+      await protocol.decodeSignal(14, 14) // 'O'
       
-      const message = await protocol.reconstructMessage(4, 9)
-      const expected = 'HELLO WORLD\0'
+      const message = await protocol.reconstructMessage(10, 14)
+      const expected = 'HELLO'
       assert.strictEqual(message, expected, `Expected "${expected}", got "${message}"`)
       console.log('   ✅ PASS')
       passed++
@@ -63,17 +63,19 @@ async function runTests() {
     }
   }
 
-  console.log('\n3. Testing Special Characters:')
+  console.log('\n3. Testing Numbers:')
   {
     const { db, location } = createTestDB()
     const protocol = new OnOff(db)
     try {
-      await protocol.decodeSignal(35, 36, 10) // '#$'
-      await protocol.decodeSignal(37, 38, 11) // '%&'
-      await protocol.decodeSignal(64, 42, 12) // '@*'
+      await protocol.decodeSignal(26, 15) // '0'
+      await protocol.decodeSignal(27, 16) // '1'
+      await protocol.decodeSignal(28, 17) // '2'
+      await protocol.decodeSignal(29, 18) // '3'
+      await protocol.decodeSignal(30, 19) // '4'
       
-      const message = await protocol.reconstructMessage(10, 12)
-      const expected = '#$%&@*'
+      const message = await protocol.reconstructMessage(15, 19)
+      const expected = '01234'
       assert.strictEqual(message, expected, `Expected "${expected}", got "${message}"`)
       console.log('   ✅ PASS')
       passed++
@@ -91,13 +93,17 @@ async function runTests() {
     const { db, location } = createTestDB()
     const protocol = new OnOff(db)
     try {
-      // 200 % 128 = 72 (H), 256 % 128 = 0
-      await protocol.decodeSignal(200, 256, 13) // 'H\0'
-      // 327 % 128 = 71 (G), 455 % 128 = 71 (G)
-      await protocol.decodeSignal(327, 455, 14) // 'GG'
+      // 36 % 36 = 0 -> 'A'
+      await protocol.decodeSignal(36, 20) // 'A'
+      // 37 % 36 = 1 -> 'B' 
+      await protocol.decodeSignal(37, 21) // 'B'
+      // 72 % 36 = 0 -> 'A'
+      await protocol.decodeSignal(72, 22) // 'A'
+      // 73 % 36 = 1 -> 'B'
+      await protocol.decodeSignal(73, 23) // 'B'
       
-      const message = await protocol.reconstructMessage(13, 14)
-      const expected = 'H\0GG'
+      const message = await protocol.reconstructMessage(20, 23)
+      const expected = 'ABAB'
       assert.strictEqual(message, expected, `Expected "${expected}", got "${message}"`)
       console.log('   ✅ PASS')
       passed++
@@ -115,11 +121,11 @@ async function runTests() {
     const { db, location } = createTestDB()
     const protocol = new OnOff(db)
     try {
-      await protocol.decodeSignal(65, 66, 15) // 'AB'
-      await protocol.decodeSignal(67, 68, 17) // 'CD'
+      await protocol.decodeSignal(0, 15) // 'A'
+      await protocol.decodeSignal(1, 17) // 'B'
       
       const message = await protocol.reconstructMessage(15, 17)
-      const expected = 'AB  CD'
+      const expected = 'A B' // hour 16 is missing -> space
       assert.strictEqual(message, expected, `Expected "${expected}", got "${message}"`)
       console.log('   ✅ PASS')
       passed++
@@ -137,11 +143,35 @@ async function runTests() {
     const { db, location } = createTestDB()
     const protocol = new OnOff(db)
     try {
-      await protocol.decodeSignal(65, 66, 18) // 'AB'
+      await protocol.decodeSignal(0, 18) // 'A'
       await protocol.clear()
       
       const message = await protocol.reconstructMessage(18, 18)
-      const expected = '  '
+      const expected = ' ' // single space for single hour
+      assert.strictEqual(message, expected, `Expected "${expected}", got "${message}"`)
+      console.log('   ✅ PASS')
+      passed++
+    } catch (error) {
+      console.log(`   ❌ FAIL: ${error.message}`)
+      failed++
+    } finally {
+      await protocol.close()
+      await rm(location, { recursive: true, force: true })
+    }
+  }
+
+  console.log('\n7. Testing Natural Pattern Multipliers:')
+  {
+    const { db, location } = createTestDB()
+    const protocol = new OnOff(db)
+    try {
+      await protocol.decodeSignal(7, 0) // 7 % 36 = 7 -> 'H'
+      await protocol.decodeSignal(43, 1) // 43 % 36 = 7 -> 'H'
+      await protocol.decodeSignal(79, 2) // 79 % 36 = 7 -> 'H'
+      await protocol.decodeSignal(115, 3) // 115 % 36 = 7 -> 'H'
+
+      const message = await protocol.reconstructMessage(0, 3)
+      const expected = 'HHHH'
       assert.strictEqual(message, expected, `Expected "${expected}", got "${message}"`)
       console.log('   ✅ PASS')
       passed++
