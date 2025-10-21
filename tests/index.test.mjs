@@ -19,10 +19,10 @@ async function runTests() {
     const { db, location } = createTestDB()
     const protocol = new OnOff(db)
     try {
-      await protocol.decodeSignal(0, 1) // 'A'
-      await protocol.decodeSignal(1, 2) // 'B' 
-      await protocol.decodeSignal(2, 3) // 'C'
-      await protocol.decodeSignal(3, 4) // 'D'
+      await protocol.decodeSignal(1, 1) // 'A'
+      await protocol.decodeSignal(2, 2) // 'B' 
+      await protocol.decodeSignal(3, 3) // 'C'
+      await protocol.decodeSignal(4, 4) // 'D'
       
       const message = await protocol.reconstructMessage(1, 4)
       const expected = 'ABCD'
@@ -43,11 +43,11 @@ async function runTests() {
     const { db, location } = createTestDB()
     const protocol = new OnOff(db)
     try {
-      await protocol.decodeSignal(7, 10) // 'H'
-      await protocol.decodeSignal(4, 11) // 'E'
-      await protocol.decodeSignal(11, 12) // 'L'
-      await protocol.decodeSignal(11, 13) // 'L'
-      await protocol.decodeSignal(14, 14) // 'O'
+      await protocol.decodeSignal(8, 10) // 'H'
+      await protocol.decodeSignal(5, 11) // 'E'
+      await protocol.decodeSignal(12, 12) // 'L'
+      await protocol.decodeSignal(12, 13) // 'L'
+      await protocol.decodeSignal(15, 14) // 'O'
       
       const message = await protocol.reconstructMessage(10, 14)
       const expected = 'HELLO'
@@ -68,11 +68,11 @@ async function runTests() {
     const { db, location } = createTestDB()
     const protocol = new OnOff(db)
     try {
-      await protocol.decodeSignal(26, 15) // '0'
-      await protocol.decodeSignal(27, 16) // '1'
-      await protocol.decodeSignal(28, 17) // '2'
-      await protocol.decodeSignal(29, 18) // '3'
-      await protocol.decodeSignal(30, 19) // '4'
+      await protocol.decodeSignal(27, 15) // '0'
+      await protocol.decodeSignal(28, 16) // '1'
+      await protocol.decodeSignal(29, 17) // '2'
+      await protocol.decodeSignal(30, 18) // '3'
+      await protocol.decodeSignal(31, 19) // '4'
       
       const message = await protocol.reconstructMessage(15, 19)
       const expected = '01234'
@@ -93,14 +93,14 @@ async function runTests() {
     const { db, location } = createTestDB()
     const protocol = new OnOff(db)
     try {
-      // 36 % 36 = 0 -> 'A'
-      await protocol.decodeSignal(36, 20) // 'A'
-      // 37 % 36 = 1 -> 'B' 
-      await protocol.decodeSignal(37, 21) // 'B'
-      // 72 % 36 = 0 -> 'A'
-      await protocol.decodeSignal(72, 22) // 'A'
-      // 73 % 36 = 1 -> 'B'
-      await protocol.decodeSignal(73, 23) // 'B'
+      // 37 % 36 = 0 -> 'A'
+      await protocol.decodeSignal(37, 20) // 'A'
+      // 38 % 36 = 1 -> 'B' 
+      await protocol.decodeSignal(38, 21) // 'B'
+      // 73 % 36 = 0 -> 'A'
+      await protocol.decodeSignal(73, 22) // 'A'
+      // 74 % 36 = 1 -> 'B'
+      await protocol.decodeSignal(74, 23) // 'B'
       
       const message = await protocol.reconstructMessage(20, 23)
       const expected = 'ABAB'
@@ -121,8 +121,8 @@ async function runTests() {
     const { db, location } = createTestDB()
     const protocol = new OnOff(db)
     try {
-      await protocol.decodeSignal(0, 15) // 'A'
-      await protocol.decodeSignal(1, 17) // 'B'
+      await protocol.decodeSignal(1, 15) // 'A'
+      await protocol.decodeSignal(2, 17) // 'B'
       
       const message = await protocol.reconstructMessage(15, 17)
       const expected = 'A B' // hour 16 is missing -> space
@@ -143,7 +143,7 @@ async function runTests() {
     const { db, location } = createTestDB()
     const protocol = new OnOff(db)
     try {
-      await protocol.decodeSignal(0, 18) // 'A'
+      await protocol.decodeSignal(1, 18) // 'A'
       await protocol.clear()
       
       const message = await protocol.reconstructMessage(18, 18)
@@ -165,10 +165,10 @@ async function runTests() {
     const { db, location } = createTestDB()
     const protocol = new OnOff(db)
     try {
-      await protocol.decodeSignal(7, 0) // 7 % 36 = 7 -> 'H'
-      await protocol.decodeSignal(43, 1) // 43 % 36 = 7 -> 'H'
-      await protocol.decodeSignal(79, 2) // 79 % 36 = 7 -> 'H'
-      await protocol.decodeSignal(115, 3) // 115 % 36 = 7 -> 'H'
+      await protocol.decodeSignal(8, 0) // 8 % 36 = 7 -> 'H'
+      await protocol.decodeSignal(44, 1) // 44 % 36 = 7 -> 'H'
+      await protocol.decodeSignal(80, 2) // 80 % 36 = 7 -> 'H'
+      await protocol.decodeSignal(116, 3) // 116 % 36 = 7 -> 'H'
 
       const message = await protocol.reconstructMessage(0, 3)
       const expected = 'HHHH'

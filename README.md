@@ -20,28 +20,28 @@ Signaling protocol :::::::
 
 **Direct mapping:**
 
-- `views = 0` → 'A'
-- `views = 1` → 'B' 
-- `views = 2` → 'C'
+- `views = 1` → 'A'
+- `views = 2` → 'B' 
+- `views = 3` → 'C'
 - ...
-- `views = 8` → '9'
+- `views = 35` → '9'
 
 
 ## Example:
 
 To send "HELLO" starting at hour 14:
 
-    H = 7 → views=7
-    E = 4 → views=4
-    L = 11 → views=11
-    L = 11 → views=11
-    O = 14 → views=14
+    H = 8th letter  -> 8 views
+    E = 5th letter  -> 5 views
+    L = 12th letter -> 12 views
+    L = 12th letter -> 12 views
+    O = 15th letter -> 15 views
 
-    Hour 14: views=7 → 'H'
-    Hour 15: views=4 → 'E'
-    Hour 16: views=47 → 'L' (47 % 36 = 11)
-    Hour 17: views=47 → 'L'
-    Hour 18: views=50 → 'O' (50 % 36 = 14)
+    Hour 14: views=8   → 'H'
+    Hour 15: views=5   → 'E'
+    Hour 16: views=12  → 'L'
+    Hour 17: views=12  → 'L'
+    Hour 18: views=15  → 'O'
 
 ## Technical Notes:
 
@@ -51,8 +51,9 @@ To send "HELLO" starting at hour 14:
 
 ## Character Reference
 
-    A=0 B=1 C=2 D=3 E=4 F=5 G=6 H=7 I=8 J=9
-    K=10 L=11 M=12 N=13 O=14 P=15 Q=16 R=17 S=18 T=19
-    U=20 V=21 W=22 X=23 Y=24 Z=25 0=26 1=27 2=28
-    3=29 4=30 5=31 6=32 7=33 8=34 9=35
+    0: space (no view)
+    1: A, 2: B, 3: C, 4: D, 5: E, 6: F, 7: G, 8: H, 9: I, 10: J,
+    11: K, 12: L, 13: M, 14: N, 15: O, 16: P, 17: Q, 18: R, 19: S, 20: T,
+    21: U, 22: V, 23: W, 24: X, 25: Y, 26: Z,
+    27: 0, 28: 1, 29: 2, 30: 3, 31: 4, 32: 5, 33: 6, 34: 7, 35: 8, 36: 9
 

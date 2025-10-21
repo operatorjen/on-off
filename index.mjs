@@ -66,16 +66,21 @@ export default class OnOff {
     this.ensureIntInRange(hour, 'hour', 0, 23)
     this.ensureDayString(day, 'day')
 
-    const charIndex = this.mod(views, BASE)
-    const char = BASE36_CHARS[charIndex]
-
+    let char
+    let charIndex = 0
+    if (views === 0) {
+      char = ' '
+    } else {
+      charIndex = this.mod(views - 1, BASE)
+      char = BASE36_CHARS[charIndex]
+    }
     const data = {
       ns: this.namespace,
       type: 'base36',
       char: char,
       raw: {
         views: views,
-        charIndex
+        charIndex: views === 0 ? 0 : charIndex + 1
       },
       timestamp: Date.now(),
       day,
