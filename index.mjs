@@ -1,15 +1,11 @@
-import { Level } from 'level'
-
+const BASE3_CHARS = '012'
 const BASE36_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-const BASE = 36
+const BASE = 3
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
 
 export default class OnOff {
-  constructor(
-    db = new Level('./db', { valueEncoding: 'json' }),
-    options = {}
-  ) {
-    this.db = db
+  constructor(options = {}) {
+    this.db = {}
     this.namespace = options.namespace || 'default'
   }
 
@@ -68,31 +64,47 @@ export default class OnOff {
 
     let char
     let charIndex = 0
+    
     if (views === 0) {
       char = ' '
     } else {
       charIndex = this.mod(views - 1, BASE)
-      char = BASE36_CHARS[charIndex]
+      char = BASE3_CHARS[charIndex]
     }
+    
     const data = {
       ns: this.namespace,
-      type: 'base36',
+      type: 'base3',
       char: char,
       raw: {
         views: views,
-        charIndex: views === 0 ? 0 : charIndex + 1
+        charIndex: charIndex
       },
       timestamp: Date.now(),
       day,
       hour
     }
 
-    await this.db.put(this.key(hour, day), data)
+    const key = this.key(hour, day)
+    this.db[key] = data
     return data
   }
 
   async decodeSignal(views, hour, day = this.defaultDay()) {
     return this.recordSignal(views, hour, day)
+  }
+
+  base3ToBase36(base3String) {
+    let decimal = 0
+    for (let i = 0; i < base3String.length; i++) {
+      const digit = parseInt(base3String[i], 3)
+      decimal = decimal * 3 + digit
+    }
+
+    if (decimal < BASE36_CHARS.length) {
+      return BASE36_CHARS[decimal]
+    }
+    return ' '
   }
 
   async reconstructMessage(startHour = 0, endHour = 23, day = this.defaultDay(), { trim = false } = {}) {
@@ -103,45 +115,44 @@ export default class OnOff {
     }
     this.ensureDayString(day, 'day')
 
-    const keys = []
+    let base3Message = ''
     for (let hour = startHour; hour <= endHour; hour++) {
-      keys.push(this.key(hour, day))
+      const key = this.key(hour, day)
+      const signal = this.db[key]
+      base3Message += signal ? signal.char : ' '
     }
 
-    const results = this.db.getMany
-      ? await this.db.getMany(keys).catch(() => [])
-      : await Promise.all(keys.map(k => this.db.get(k).catch(() => null)))
+    let alphanumericMessage = ''
+    for (let i = 0; i < base3Message.length; i += 4) {
+      const base3Chunk = base3Message.slice(i, i + 4)
 
-    let message = ''
-    for (let i = 0; i < results.length; i++) {
-      const signal = results[i]
-      message += signal ? signal.char : ' '
+      if (base3Chunk.includes(' ')) {
+        alphanumericMessage += ' '
+      } else {
+        const paddedChunk = base3Chunk.padEnd(4, '0')
+        const base36Char = this.base3ToBase36(paddedChunk)
+        alphanumericMessage += base36Char
+      }
     }
-    return trim ? message.trim() : message
+
+    return trim ? alphanumericMessage.trim() : alphanumericMessage
   }
 
   async clear(day = null) {
-    let prefix = 'signal:'
     if (day != null) {
       this.ensureDayString(day, 'day')
-      prefix = `signal:${day}:${this.namespace}:`
+      const prefix = `signal:${day}:${this.namespace}:`
+      Object.keys(this.db).forEach(key => {
+        if (key.startsWith(prefix)) {
+          delete this.db[key]
+        }
+      })
+    } else {
+      Object.keys(this.db).forEach(key => {
+        if (key.startsWith('signal:')) {
+          delete this.db[key]
+        }
+      })
     }
-
-    const gte = prefix
-    const lt = prefix + '\xFF'
-
-    const ops = []
-    for await (const [key] of this.db.iterator({ gte, lt })) {
-      ops.push({ type: 'del', key })
-    }
-    if (ops.length > 0) {
-      await this.db.batch(ops)
-    }
-  }
-
-  async close() {
-    try {
-      await this.db?.close()
-    } catch { }
   }
 }

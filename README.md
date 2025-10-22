@@ -4,56 +4,37 @@ Signaling protocol :::::::
 
 ## Encoding Rules:
 
-- Each UTC hour encodes **one Base36 character** using only view counts
-- Character set: `ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`
-- 24-hour cycle = 24 characters maximum
-- **Views range: 0-8** (maps directly to characters)
+- **0 views** → Space (no signal)
+- **1+ views** → Base3 digit: `(views - 1) % 3`
+- Groups of 4 Base3 digits convert to Base36 characters
+- Any group containing a space results in a space
 
 ## Structure:
 
-    Hour 00: views(0-8) → char1
-    Hour 01: views(0-8) → char2
+    Hours 00-03: 4 Base3 digits → char1
+    Hours 04-07: 4 Base3 digits → char2
     ...
-    Hour 23: views(0-8) → char24
-
-## How to Encode
-
-**Direct mapping:**
-
-- `views = 1` → 'A'
-- `views = 2` → 'B' 
-- `views = 3` → 'C'
-- ...
-- `views = 35` → '9'
-
+    Hours 20-23: 4 Base3 digits → char6
 
 ## Example:
 
-To send "HELLO" starting at hour 14:
+To send "HELLO" starting at hour 0:
 
-    H = 8th letter  -> 8 views
-    E = 5th letter  -> 5 views
-    L = 12th letter -> 12 views
-    L = 12th letter -> 12 views
-    O = 15th letter -> 15 views
+    H = 7  → Base3: "0021"
+    E = 4  → Base3: "0011"
+    L = 11 → Base3: "0102"
+    L = 11 → Base3: "0102"
+    O = 14 → Base3: "0112"
 
-    Hour 14: views=8   → 'H'
-    Hour 15: views=5   → 'E'
-    Hour 16: views=12  → 'L'
-    Hour 17: views=12  → 'L'
-    Hour 18: views=15  → 'O'
+    Hours 00-03: views=1,1,3,2   → "0021" → 'H'
+    Hours 04-07: views=1,1,2,2   → "0011" → 'E'
+    Hours 08-11: views=1,2,1,3   → "0102" → 'L'
+    Hours 12-15: views=1,2,1,3   → "0102" → 'L'
+    Hours 16-19: views=1,2,2,3   → "0112" → 'O'
 
 ## Technical Notes:
 
-- Base36 character set only (A-Z0-9)
+- Base3 encoding with Base36 output
+- 4:1 compression (4 hours = 1 character)
 - UTC day boundaries only
 - Views-only encoding (clones ignored)
-
-## Character Reference
-
-    0: space (no view)
-    1: A, 2: B, 3: C, 4: D, 5: E, 6: F, 7: G, 8: H, 9: I, 10: J,
-    11: K, 12: L, 13: M, 14: N, 15: O, 16: P, 17: Q, 18: R, 19: S, 20: T,
-    21: U, 22: V, 23: W, 24: X, 25: Y, 26: Z,
-    27: 0, 28: 1, 29: 2, 30: 3, 31: 4, 32: 5, 33: 6, 34: 7, 35: 8, 36: 9
-
