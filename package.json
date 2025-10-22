@@ -19,7 +19,7 @@
   },
   "scripts": {
     "start": "node index.mjs",
-    "read": "node daily.mjs ./csvs/traffic-hourly-2025-10-21_to_2025-10-27.csv --day 2025-10-21 --repo on-off",
+    "read": "node daily.mjs ./csvs/traffic-hourly-2025-10-21_to_2025-10-27.csv --day 2025-10-22 --repo on-off",
     "test": "node tests/index.test.mjs"
   },
   "dependencies": {
