@@ -71,7 +71,7 @@ export default class OnOff {
       charIndex = this.mod(views - 1, BASE)
       char = BASE3_CHARS[charIndex]
     }
-    
+
     const data = {
       ns: this.namespace,
       type: 'base3',
