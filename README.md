@@ -1,40 +1,47 @@
 # On / Off
 
-Signaling protocol :::::::
+Dynamic Base Signaling Protocol
+
+A flexible encoding system that can use any base from 2 to 36 to encode 0-9A-Z characters into daily configurations.
 
 ## Encoding Rules:
 
-- **0 views** → Space (no signal)
-- **1+ views** → Base3 digit: `(views - 1) % 3`
-- Groups of 4 Base3 digits convert to Base36 characters
-- Any group containing a space results in a space
+- **0 views** → empty/space (no signal)  
+- **1+ views** → BaseX digit: `(views - 1) % base` where X is between 2-36
+- Hourly signals over 24-hour UTC cycles
 
-## Structure:
+*Note: a view represents any countable metric - e.g. web traffic, sensor readings, observation events, etc.*
+
+## Structure for Base3 and Base36:
 
     Hours 00-03: 4 Base3 digits → char1
     Hours 04-07: 4 Base3 digits → char2
     ...
     Hours 20-23: 4 Base3 digits → char6
 
-## Example:
+    ////////////////////////////////////
 
-To send "HELLO" starting at hour 0:
+    Hours 00: 1 Base36 digits → char1
+    Hours 01: 1 Base36 digits → char2
+    ...
+    Hours 23-23: 1 Base36 digits → char36
 
-    H = 7  → Base3: "0021"
-    E = 4  → Base3: "0011"
-    L = 11 → Base3: "0102"
-    L = 11 → Base3: "0102"
-    O = 14 → Base3: "0112"
+## Usage:
 
-    Hours 00-03: views=1,1,3,2   → "0021" → 'H'
-    Hours 04-07: views=1,1,2,2   → "0011" → 'E'
-    Hours 08-11: views=1,2,1,3   → "0102" → 'L'
-    Hours 12-15: views=1,2,1,3   → "0102" → 'L'
-    Hours 16-19: views=1,2,2,3   → "0112" → 'O'
+    ```javascript
+    const protocol = new OnOff()
+    const base = 16
+
+    await protocol.decodeSignal(base, 2, 0)
+    await protocol.decodeSignal(base, 2, 1)
+    await protocol.decodeSignal(base, 2, 2)
+    await protocol.decodeSignal(base, 3, 3)
+
+    const message = await protocol.reconstructMessage(3, 0, 23)
+    // message = "HI"
+    ```
 
 ## Technical Notes:
 
-- Base3 encoding with Base36 output
-- 4:1 compression (4 hours = 1 character)
 - UTC day boundaries only
 - Views-only encoding (clones ignored)

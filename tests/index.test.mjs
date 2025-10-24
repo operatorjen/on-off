@@ -8,18 +8,19 @@ async function runTests() {
   console.log('Testing Basic Base3 to Base36 Conversion:')
   {
     const protocol = new OnOff()
+    const base = 3
     try {
-      await protocol.decodeSignal(1, 0)
-      await protocol.decodeSignal(1, 1) 
-      await protocol.decodeSignal(1, 2)
-      await protocol.decodeSignal(1, 3)
-      
-      await protocol.decodeSignal(1, 4)
-      await protocol.decodeSignal(1, 5)
-      await protocol.decodeSignal(1, 6)
-      await protocol.decodeSignal(2, 7)
-      
-      const message = await protocol.reconstructMessage(0, 7)
+      await protocol.decodeSignal(base, 1, 0)
+      await protocol.decodeSignal(base, 2, 1) 
+      await protocol.decodeSignal(base, 1, 2)
+      await protocol.decodeSignal(base, 2, 3)
+
+      await protocol.decodeSignal(base, 1, 4)
+      await protocol.decodeSignal(base, 2, 5)
+      await protocol.decodeSignal(base, 1, 6)
+      await protocol.decodeSignal(base, 3, 7)
+
+      const message = await protocol.reconstructMessage(base, 0, 7)
       const expected = 'AB'
       assert.strictEqual(message, expected, `Expected "${expected}", got "${message}"`)
       console.log('   ✅ PASS')
@@ -30,56 +31,101 @@ async function runTests() {
     }
   }
 
-  console.log('\nTesting Full Message Conversion:')
-    {
-      const protocol = new OnOff()
-      try {
-        await protocol.decodeSignal(1, 0)
-        await protocol.decodeSignal(1, 1)
-        await protocol.decodeSignal(3, 2)
-        await protocol.decodeSignal(2, 3)
+  console.log('\nTesting Full Message Conversion Base3:')
+  {
+    const protocol = new OnOff()
+    const base = 3
+    try {
+      await protocol.decodeSignal(base, 1, 0)
+      await protocol.decodeSignal(base, 2, 1)
+      await protocol.decodeSignal(base, 3, 2)
+      await protocol.decodeSignal(base, 3, 3)
 
-        await protocol.decodeSignal(1, 4)
-        await protocol.decodeSignal(1, 5)
-        await protocol.decodeSignal(2, 6)
-        await protocol.decodeSignal(2, 7)
+      await protocol.decodeSignal(base, 1, 4)
+      await protocol.decodeSignal(base, 2, 5)
+      await protocol.decodeSignal(base, 2, 6)
+      await protocol.decodeSignal(base, 3, 7)
 
-        await protocol.decodeSignal(1, 8)
-        await protocol.decodeSignal(2, 9)
-        await protocol.decodeSignal(1, 10)
-        await protocol.decodeSignal(3, 11)
+      await protocol.decodeSignal(base, 1, 8)
+      await protocol.decodeSignal(base, 3, 9)
+      await protocol.decodeSignal(base, 2, 10)
+      await protocol.decodeSignal(base, 1, 11)
 
-        await protocol.decodeSignal(1, 12)
-        await protocol.decodeSignal(2, 13)
-        await protocol.decodeSignal(1, 14)
-        await protocol.decodeSignal(3, 15)
- 
-        await protocol.decodeSignal(1, 16)
-        await protocol.decodeSignal(2, 17)
-        await protocol.decodeSignal(2, 18)
-        await protocol.decodeSignal(3, 19)
-        
-        const message = await protocol.reconstructMessage(0, 19)
-        const expected = 'HELLO'
-        assert.strictEqual(message, expected, `Expected "${expected}", got "${message}"`)
-        console.log('   ✅ PASS')
-        passed++
-      } catch (error) {
-        console.log(`   ❌ FAIL: ${error.message}`)
-        failed++
-      }
+      await protocol.decodeSignal(base, 1, 12)
+      await protocol.decodeSignal(base, 3, 13)
+      await protocol.decodeSignal(base, 2, 14)
+      await protocol.decodeSignal(base, 1, 15)
+
+      await protocol.decodeSignal(base, 1, 16)
+      await protocol.decodeSignal(base, 3, 17)
+      await protocol.decodeSignal(base, 3, 18)
+      await protocol.decodeSignal(base, 1, 19)
+
+      const message = await protocol.reconstructMessage(base, 0, 19)
+      const expected = 'HELLO'
+      assert.strictEqual(message, expected, `Expected "${expected}", got "${message}"`)
+      console.log('   ✅ PASS')
+      passed++
+    } catch (error) {
+      console.log(`   ❌ FAIL: ${error.message}`)
+      failed++
     }
+  }
+
+  console.log('\nTesting Full Message Conversion Base16:')
+  {
+    const protocol = new OnOff()
+    const base = 16
+    try {
+      await protocol.decodeSignal(base, 2, 0)
+      await protocol.decodeSignal(base, 2, 1)
+      await protocol.decodeSignal(base, 2, 2)
+      await protocol.decodeSignal(base, 3, 3)
+
+      const message = await protocol.reconstructMessage(base, 0, 3)
+      const expected = 'HI'
+      assert.strictEqual(message, expected, `Expected "${expected}", got "${message}"`)
+      console.log('   ✅ PASS')
+      passed++
+    } catch (error) {
+      console.log(`   ❌ FAIL: ${error.message}`)
+      failed++
+    }
+  }
+
+
+  console.log('\nTesting Full Message Conversion Base36:')
+  {
+    const protocol = new OnOff()
+    const base = 36
+    try {
+      await protocol.decodeSignal(base, 11, 0)
+      await protocol.decodeSignal(base, 12, 1)
+      await protocol.decodeSignal(base, 13, 2)
+      await protocol.decodeSignal(base, 10, 4)
+      
+      const message = await protocol.reconstructMessage(base, 0, 4)
+      const expected = 'ABC 9'
+      assert.strictEqual(message, expected, `Expected "${expected}", got "${message}"`)
+      console.log('   ✅ PASS')
+      passed++
+    } catch (error) {
+      console.log(`   ❌ FAIL: ${error.message}`)
+      failed++
+    }
+  }
 
   console.log('\nTesting Spaces for Zero Views:')
   {
     const protocol = new OnOff()
+    const base = 3
     try {
-      await protocol.decodeSignal(1, 0)
-      await protocol.decodeSignal(0, 1)
-      await protocol.decodeSignal(1, 2)
-      await protocol.decodeSignal(1, 3)
+      await protocol.decodeSignal(base, 1, 0)
+      await protocol.decodeSignal(base, 0, 1)
+      await protocol.decodeSignal(base, 1, 2)
+      await protocol.decodeSignal(base, 1, 3)
       
-      const message = await protocol.reconstructMessage(0, 3)
+      const message = await protocol.reconstructMessage(base, 0, 3)
       const expected = ' '
       assert.strictEqual(message, expected, `Expected "${expected}", got "${message}"`)
       console.log('   ✅ PASS')
@@ -93,11 +139,12 @@ async function runTests() {
   console.log('\nTesting Missing Hours Become Spaces:')
   {
     const protocol = new OnOff()
+    const base = 3
     try {
-      await protocol.decodeSignal(1, 0)
-      await protocol.decodeSignal(2, 2) 
+      await protocol.decodeSignal(base, 1, 0)
+      await protocol.decodeSignal(base, 2, 2) 
 
-      const message = await protocol.reconstructMessage(0, 3)
+      const message = await protocol.reconstructMessage(base, 0, 3)
       const expected = ' '
       assert.strictEqual(message, expected, `Expected "${expected}", got "${message}"`)
       console.log('   ✅ PASS')
@@ -111,12 +158,13 @@ async function runTests() {
   console.log('\nTesting Clear Functionality:')
   {
     const protocol = new OnOff()
+    const base = 3
     try {
-      await protocol.decodeSignal(1, 0)
-      await protocol.decodeSignal(1, 1)
+      await protocol.decodeSignal(base, 1, 0)
+      await protocol.decodeSignal(base, 1, 1)
       await protocol.clear()
       
-      const message = await protocol.reconstructMessage(0, 1)
+      const message = await protocol.reconstructMessage(base, 0, 1)
       const expected = ' '
       assert.strictEqual(message, expected, `Expected "${expected}", got "${message}"`)
       console.log('   ✅ PASS')

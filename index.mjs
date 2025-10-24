@@ -1,7 +1,7 @@
-const BASE3_CHARS = '012'
-const BASE36_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-const BASE = 3
+const DIGITS = '0123456789'
+const BASE_CHARS = `${DIGITS}ABCDEFGHIJKLMNOPQRSTUVWXYZ`
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
+const HOURS = 23
 
 export default class OnOff {
   constructor(options = {}) {
@@ -51,15 +51,51 @@ export default class OnOff {
     if (day == null) {
       throw new Error('UTC day is required for keying (YYYY-MM-DD)')
     }
-    this.ensureIntInRange(hour, 'hour', 0, 23)
+    this.ensureIntInRange(hour, 'hour', 0, HOURS)
     this.ensureDayString(day, 'day')
     const hh = hour.toString().padStart(2, '0')
     return `signal:${day}:${this.namespace}:${hh}`
   }
 
-  async recordSignal(views, hour, day = this.defaultDay()) {
+  async reconstructMessage(base = 3, startHour = 0, endHour = 23, day = this.defaultDay(), { trim = false } = {}) {
+    this.ensureIntInRange(startHour, 'startHour', 0, HOURS)
+    this.ensureIntInRange(endHour, 'endHour', 0, HOURS)
+    if (startHour > endHour) {
+      throw new RangeError('startHour must be <= endHour')
+    }
+    this.ensureDayString(day, 'day')
+
+    let baseMessage = ''
+    for (let hour = startHour; hour <= endHour; hour++) {
+      const key = this.key(hour, day)
+      const signal = this.db[key]
+      baseMessage += signal ? signal.char : ' '
+    }
+
+    let alphanumericMessage = ''
+    const chunkSize = this.getChunkSize(base)
+
+    for (let i = 0; i < baseMessage.length; i += chunkSize) {
+      const baseChunk = baseMessage.slice(i, i + chunkSize)
+      if (baseChunk.includes(' ')) {
+        alphanumericMessage += ' '
+      } else {
+        const paddedChunk = baseChunk.padEnd(chunkSize, '0')
+        const base36Char = this.baseXToBase36(base, paddedChunk)
+        alphanumericMessage += base36Char
+      }
+    }
+
+    return trim ? alphanumericMessage.trim() : alphanumericMessage
+  }
+
+  async decodeSignal(base = 3, views, hour, day = this.defaultDay()) {
+    return this.recordSignal(base, views, hour, day)
+  }
+
+  async recordSignal(base = 3, views, hour, day = this.defaultDay()) {
     this.ensureFiniteInteger(views, 'views')
-    this.ensureIntInRange(hour, 'hour', 0, 23)
+    this.ensureIntInRange(hour, 'hour', 0, HOURS)
     this.ensureDayString(day, 'day')
 
     let char
@@ -68,13 +104,14 @@ export default class OnOff {
     if (views === 0) {
       char = ' '
     } else {
-      charIndex = this.mod(views - 1, BASE)
-      char = BASE3_CHARS[charIndex]
+      charIndex = this.mod(views - 1, base)
+      const baseDigits = this.getBaseDigits(base)
+      char = baseDigits[charIndex]
     }
-
+    
     const data = {
       ns: this.namespace,
-      type: 'base3',
+      type: `base${base}`,
       char: char,
       raw: {
         views: views,
@@ -90,52 +127,26 @@ export default class OnOff {
     return data
   }
 
-  async decodeSignal(views, hour, day = this.defaultDay()) {
-    return this.recordSignal(views, hour, day)
+  getBaseDigits(base = 3) {
+    if (base <= 10) return DIGITS.slice(0, base)
+    return BASE_CHARS.slice(0, base)
   }
 
-  base3ToBase36(base3String) {
+  getChunkSize(base = 3) {
+    return Math.ceil(Math.log(36) / Math.log(base))
+  }
+
+  baseXToBase36(base = 3, baseString) {
     let decimal = 0
-    for (let i = 0; i < base3String.length; i++) {
-      const digit = parseInt(base3String[i], 3)
-      decimal = decimal * 3 + digit
+    const baseDigits = this.getBaseDigits(base)
+    
+    for (let i = 0; i < baseString.length; i++) {
+      const char = baseString[i]
+      const digitValue = baseDigits.indexOf(char)
+      decimal = decimal * base + digitValue
     }
-
-    if (decimal < BASE36_CHARS.length) {
-      return BASE36_CHARS[decimal]
-    }
-    return ' '
-  }
-
-  async reconstructMessage(startHour = 0, endHour = 23, day = this.defaultDay(), { trim = false } = {}) {
-    this.ensureIntInRange(startHour, 'startHour', 0, 23)
-    this.ensureIntInRange(endHour, 'endHour', 0, 23)
-    if (startHour > endHour) {
-      throw new RangeError('startHour must be <= endHour')
-    }
-    this.ensureDayString(day, 'day')
-
-    let base3Message = ''
-    for (let hour = startHour; hour <= endHour; hour++) {
-      const key = this.key(hour, day)
-      const signal = this.db[key]
-      base3Message += signal ? signal.char : ' '
-    }
-
-    let alphanumericMessage = ''
-    for (let i = 0; i < base3Message.length; i += 4) {
-      const base3Chunk = base3Message.slice(i, i + 4)
-
-      if (base3Chunk.includes(' ')) {
-        alphanumericMessage += ' '
-      } else {
-        const paddedChunk = base3Chunk.padEnd(4, '0')
-        const base36Char = this.base3ToBase36(paddedChunk)
-        alphanumericMessage += base36Char
-      }
-    }
-
-    return trim ? alphanumericMessage.trim() : alphanumericMessage
+    
+    return decimal < BASE_CHARS.length ? BASE_CHARS[decimal] : ' '
   }
 
   async clear(day = null) {

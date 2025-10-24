@@ -2,10 +2,6 @@
   "name": "on-off",
   "version": "1.0.0",
   "description": "Signaling protocol",
-  "homepage": "https://github.com/operatorjen/on-off#readme",
-  "bugs": {
-    "url": "https://github.com/operatorjen/on-off/issues"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/operatorjen/on-off.git"
