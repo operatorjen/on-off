@@ -149,6 +149,37 @@ export default class OnOff {
     return decimal < BASE_CHARS.length ? BASE_CHARS[decimal] : ' '
   }
 
+  base36ToBaseX(base = 3, base36Char) {
+    if (base36Char === ' ') {
+      const chunkSize = this.getChunkSize(base)
+      return '0'.repeat(chunkSize)
+    }
+
+    const decimal = BASE_CHARS.indexOf(base36Char)
+
+    if (decimal === -1) {
+      const chunkSize = this.getChunkSize(base)
+      return '0'.repeat(chunkSize)
+    }
+
+    const baseDigits = this.getBaseDigits(base)
+    const chunkSize = this.getChunkSize(base)
+    let result = ''
+    let n = decimal
+
+    for (let i = 0; i < chunkSize; i++) {
+      if (n === 0 && i > 0) {
+        result = baseDigits[0] + result
+      } else {
+        const remainder = n % base
+        result = baseDigits[remainder] + result
+        n = Math.floor(n / base)
+      }
+    }
+
+    return result
+  }
+
   async clear(day = null) {
     if (day != null) {
       this.ensureDayString(day, 'day')
